@@ -19,6 +19,27 @@ m32 = 0x00000000ffffffff  # binary: 32 zeros, 32 ones
 hff = 0xffffffffffffffff  # binary: all ones
 h01 = 0x0101010101010101  # the sum of 256 to the power of 0,1,2,3...
 
+index64 = [
+    0, 47, 1, 56, 48, 27, 2, 60,
+    57, 49, 41, 37, 28, 16, 3, 61,
+    54, 58, 35, 52, 50, 42, 21, 44,
+    38, 32, 29, 23, 17, 11, 4, 62,
+    46, 55, 26, 59, 40, 36, 15, 53,
+    34, 51, 20, 43, 31, 22, 10, 45,
+    25, 39, 14, 33, 19, 30, 9, 24,
+    13, 18, 8, 12, 7, 6, 5, 63
+]
+
+
+def bitScanForward(bb):
+    """
+    Using de Bruijn Sequences to Index a 1 in a Computer Word
+    :param bb: bb bitboard to scan
+    :precondition bb != 0
+    :return: index (0..63) of least significant one bit
+    """
+    debruijn64 = 0x03f79d71b4cb0a89
+    return index64[((bb ^ (bb - 1)) * debruijn64) >> 58]
 
 def popcount(x):
     """
@@ -117,7 +138,26 @@ class BitBoard(Node):
     def __get_at(self, pos, player):
         return self.bitboard[player] & pos
 
+    def one_bits(self, bits):
+        """
+        Calculate index of 1s bit in bitstring
+        :param bits: bb
+        :return: List index of
+        """
+        if bits == 0:
+            return []
+        else:
+            bb = bits
+            result = []
+            while bb != 0:
+                index = bitScanForward(bb)
+                result.append(index)
+                bb &= ~(1 << index)
+            return result
+
+
     def __to_x_y(self, board):
+
         to_x_y = []
         for i in xrange(0, 64, 8):
             temp = board >> i & 0xFF
@@ -244,7 +284,9 @@ if __name__ == "__main__":
     print "Player 2", bb.get_score(C_PLAYER2)
     print bitboard_tostring(bb.bitboard[C_PLAYER1])
     print bb.get_at(4, 4)
-
+    for i in xrange(100000):
+        if i != 0:
+            bb.one_bits(0b100000000000000)
 
     # print bb
 """

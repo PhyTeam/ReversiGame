@@ -54,13 +54,32 @@ class MinMaxSearcher(AbstractSearcher):
 
 
 class AlplaBetaSearcher(AbstractSearcher):
+    __node_visited = 0
+    __time_estimate = 0
+    __eval_count = 0
+
     def search(self, node, depth, player):
+        # Reset all variable
+        self.__eval_count = 0
+        self.__node_visited = 0
+        self.__time_estimate = 0
         # Swapper function
-        return self.__search(node, depth, -1000, 1000, player)
+        result = self.__search(node, depth, -1000, 1000, player)
+        print "_________________________________________________"
+        print "| Node\t| Depth\t| Eval node\t|"
+        print "_________________________________________________"
+        print "| ", self.__node_visited, "\t",
+        print "| ", depth, "\t",
+        print "| ", self.__eval_count, "\t", "|"
+        print "_________________________________________________"
+        return result
 
     def __search(self, node, depth, alpha, beta, player):
         """Tim theo giai thuat  minmax"""
+
+        self.__node_visited += 1
         if depth <= 0:
+            self.__eval_count += 1
             return self.get_heuristic_value(node), None
 
         valid_moves = node.get_all_valid_moves(player)
@@ -69,6 +88,7 @@ class AlplaBetaSearcher(AbstractSearcher):
             return self.get_heuristic_value(node), None
 
         best_value, best_move = -1000, None
+
         for mov, new_node in valid_moves.iteritems():
             result = self.__search(new_node, depth - 1, -beta, -alpha, -player)
             value = player * result[0]  # Value of this node

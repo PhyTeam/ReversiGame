@@ -38,9 +38,9 @@ class ReversiNamespace(BaseNamespace):
     def on_end(self, data):
         """ Response to end event
         """
-        print('The winner is ' + data['winner'])
-        print('P1 count: ' + data['player1'])
-        print('P2 count: ' + data['player2'])
+        print('The winner is ' + str(data['winner']))
+        print('P1 count: ' + str(data['player1']))
+        print('P2 count: ' + str(data['player2']))
 
 
 global play_reversi

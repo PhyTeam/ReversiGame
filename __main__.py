@@ -7,27 +7,57 @@ from searcher import *
 class ReversiClient(PlayReversi):
     map_function = {
         -1: 0,
-        2: 1,
-        1: -1
+        2: -1,
+        1: 1
     }
 
     _searcher = None
     _player = 1
 
     def __init__(self, searcher, player):
+        """
+        Constructor of revesi client
+        :param searcher: searcher
+        :param player: 1 if you are first player, 2 otherwise
+        """
         super(ReversiClient, self).__init__()
         self._searcher = searcher
         self._player = player
 
-    def make_a_move(self, updated_board):
-        board = copy(updated_board)
+        if self._player == 2:
+            self._player = -1
+
+    def make_bit_board(self, board):
+        """
+        Get bitboard of current state
+        :param board: recv from server
+        :return: a bitboard
+        """
+        board = copy(board)
+        black, white = 0, 0
         for i in xrange(8):
             for j in xrange(8):
                 temp = board[i][j]
                 board[i][j] = self.map_function[temp]
-        current_node = Node(board)
-        heuristic, move = self._searcher.search(current_node, 5, 1)
-        print move
+                # Calculate bitboard
+                if board[i][j] == 1:
+                    black |= 1 << (i * 8 + j)
+                elif board[i][j] == -1:
+                    white |= 1 << (i * 8 + j)
+        # Create a bitboard node
+        bit_board = BitBoard(None)
+        bit_board.bitboard[1] = black
+        bit_board.bitboard[-1] = white
+        return bit_board
+
+    def make_a_move(self, updated_board):
+        board = copy(updated_board)
+        # current_node = Node(board)
+
+        # Generate a bitboard node
+        current_node = self.make_bit_board(board)
+        # current_node = Node(updated_board)
+        heuristic, move = self._searcher.search(current_node, 10, self._player)
         return {'X': move[1], 'Y': move[0]}
 
     def update_board(self, updated_board):
@@ -38,9 +68,11 @@ class ReversiClient(PlayReversi):
 from node_advance import *
 if __name__ == "__main__":
     heuristic = DummyHeuristic()
-    # heuristic = heuristic()
+    #heuristic = heuristic()
     begin = BitBoard(None)
+    #begin = Node.create()
     searcher = AlplaBetaSearcher(heuristic)
-    searcher.search(begin, 13, 1)
-    # handler = ReversiClient(searcher, -1)
-    #play(handler)
+    turn = int(raw_input("Enter your turn: "))
+    # searcher.search(begin, 10, turn)
+    handler = ReversiClient(searcher, turn)
+    play(handler)
