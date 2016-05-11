@@ -101,6 +101,62 @@ class AlplaBetaSearcher(AbstractSearcher):
         return best_value * player, best_move
 
 
+class NegamaxSearcher(AbstractSearcher):
+    def __init__(self, heuristic):
+        AbstractSearcher.__init__(self, heuristic)
+        self._transposition_table = {}
+
+    def search(self, node, depth, player):
+        # Swapper function
+        return self.__search(node, depth, -1000, 1000, player)
+
+    def __search(self, node, depth, alpha, beta, player):
+        """Tim theo giai thuat  minmax"""
+        alpha_orig = alpha  # Save the original value of Alpha
+
+        tt_entry = self._transposition_table.get(node)  # Looking entry in transposition table
+
+        if tt_entry is not None and tt_entry[0] >= depth:
+            if tt_entry[1] is 0:    # Flag is EXTRACT
+                return tt_entry[2], tt_entry[3]
+            elif tt_entry[1] is 1:  # Flag is LOWER BOUND
+                alpha = max(alpha, tt_entry[2])
+            elif tt_entry[1] is 2:  # Flag is UPPER BOUND
+                beta = min(beta, tt_entry[2])
+            if alpha >= beta:
+                return tt_entry[2], tt_entry[3]
+
+        if depth <= 0:
+            return player * self.get_heuristic_value(node), None
+
+        valid_moves = node.get_all_valid_moves(player)
+
+        if len(valid_moves) is 0:
+            return player * self.get_heuristic_value(node), None
+
+        best_value, best_move = -1000, None
+        for mov, new_node in valid_moves.iteritems():
+            result = self.__search(new_node, depth - 1, -beta, -alpha, -player)
+            value = -result[0]  # Value of this node
+            if value > best_value:
+                best_value, best_move = value, mov
+            alpha = max(value, alpha)
+            if alpha >= beta:
+                break
+
+        if best_value <= alpha_orig:    # Set Flag is UPPER BOUND
+            flag = 2
+        elif best_value >= alpha:       # Set Flag is LOWER Bound
+            flag = 1
+        else:                           # Set Flag is EXTRACT
+            flag = 0
+
+        # Insert entry (including depth, flag, value and move) to transposition table
+        self._transposition_table[node] = (depth, flag, best_value, best_move)
+
+        return best_value, best_move
+
+
 class AlphaBetaWidthIterativeDeepening(AbstractSearcher):
     def search(self, node, depth, player):
         """Giai thuat alpla-beta cai tien"""
