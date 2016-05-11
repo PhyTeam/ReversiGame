@@ -237,6 +237,9 @@ class BitBoard(Node):
 
         return h1 | h2
 
+    def __eq__(self, other):
+        return other.bitboard[1] == self.bitboard[1] and other.bitboard[-1] == self.bitboard[-1]
+
     def get_at(self, row, colunm):
         """
         This is a method to get a square in bit board

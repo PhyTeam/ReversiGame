@@ -132,7 +132,9 @@ class NegamaxSearcher(AbstractSearcher):
         valid_moves = node.get_all_valid_moves(player)
 
         if len(valid_moves) is 0:
-            return player * self.get_heuristic_value(node), None
+            enemy_valid_moves = node.get_all_valid_moves(-player)
+            if len(enemy_valid_moves) is 0:
+                return player * self.get_heuristic_value(node), None
 
         best_value, best_move = -1000, None
         for mov, new_node in valid_moves.iteritems():
