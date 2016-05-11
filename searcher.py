@@ -1,4 +1,6 @@
 from sys import maxint
+import timeit
+
 
 class AbstractSearcher:
     """ Lop truu tuong cu cac lop tim kiem"""
@@ -115,13 +117,16 @@ class NegamaxSearcher(AbstractSearcher):
         self._transposition_table = {}
 
     def search(self, node, depth, player):
-        self._transposition_table = {}
+        self._transposition_table.clear()
         return self.__search(node, depth, -maxint, maxint, player)
 
     def __search(self, node, depth, alpha, beta, player):
         alpha_orig = alpha  # Save the original value of Alpha
 
-        tt_entry = self._transposition_table.get(node)  # Looking entry in transposition table
+        try:
+            tt_entry = self._transposition_table[node]  # Looking entry in transposition table
+        except KeyError:
+            tt_entry = None
 
         if tt_entry is not None and tt_entry[0] >= depth:
             if tt_entry[1] is 0:    # Flag is EXTRACT
