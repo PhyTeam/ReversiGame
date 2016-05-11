@@ -57,7 +57,7 @@ class ReversiClient(PlayReversi):
         # Generate a bitboard node
         current_node = self.make_bit_board(board)
         # current_node = Node(updated_board)
-        heuristic, move = self._searcher.search(current_node, 10, self._player)
+        heuristic, move = self._searcher.search(current_node, 8, self._player)
         return {'X': move[1], 'Y': move[0]}
 
     def update_board(self, updated_board):
@@ -71,8 +71,8 @@ if __name__ == "__main__":
     #heuristic = heuristic()
     begin = BitBoard(None)
     #begin = Node.create()
-    searcher = AlplaBetaSearcher(heuristic)
+    searcher = NegamaxSearcher(heuristic)
     turn = int(raw_input("Enter your turn: "))
-    # searcher.search(begin, 10, turn)
-    handler = ReversiClient(searcher, turn)
-    play(handler)
+    searcher.search(begin, 10, turn)
+    # handler = ReversiClient(searcher, turn)
+    # play(handler)
