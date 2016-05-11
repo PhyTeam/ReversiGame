@@ -1,3 +1,5 @@
+from sys import maxint
+
 class AbstractSearcher:
     """ Lop truu tuong cu cac lop tim kiem"""
     _heuristic = None
@@ -64,7 +66,7 @@ class AlplaBetaSearcher(AbstractSearcher):
         self.__node_visited = 0
         self.__time_estimate = 0
         # Swapper function
-        result = self.__search(node, depth, -1000, 1000, player)
+        result = self.__search(node, depth, -maxint, maxint, player)
         print "_________________________________________________"
         print "| Node\t| Depth\t| Eval node\t|"
         print "_________________________________________________"
@@ -80,25 +82,31 @@ class AlplaBetaSearcher(AbstractSearcher):
         self.__node_visited += 1
         if depth <= 0:
             self.__eval_count += 1
-            return self.get_heuristic_value(node), None
+            val, parent = player * self.get_heuristic_value(node), None
+            return val, parent
 
         valid_moves = node.get_all_valid_moves(player)
 
-        if len(valid_moves) is 0:
-            return self.get_heuristic_value(node), None
+        if len(valid_moves) == 0:
+            enemy_valid_moves = node.get_all_valid_moves(-player)
+            if len(enemy_valid_moves) == 0:
+                return player * self.get_heuristic_value(node), None
+            else:
+                return - self.__search(node, depth, -beta, -alpha, -player)
 
-        best_value, best_move = -1000, None
+        best_value, best_move = -maxint, None
 
         for mov, new_node in valid_moves.iteritems():
             result = self.__search(new_node, depth - 1, -beta, -alpha, -player)
-            value = player * result[0]  # Value of this node
+            value = - result[0]  # Value of this node
             if value > best_value:
                 best_value, best_move = value, mov
             alpha = max (value, alpha)
             if alpha >= beta:
                 break
 
-        return best_value * player, best_move
+        #print depth, best_value * player
+        return best_value, best_move
 
 
 class NegamaxSearcher(AbstractSearcher):
@@ -107,11 +115,10 @@ class NegamaxSearcher(AbstractSearcher):
         self._transposition_table = {}
 
     def search(self, node, depth, player):
-        # Swapper function
-        return self.__search(node, depth, -1000, 1000, player)
+        self._transposition_table = {}
+        return self.__search(node, depth, -maxint, maxint, player)
 
     def __search(self, node, depth, alpha, beta, player):
-        """Tim theo giai thuat  minmax"""
         alpha_orig = alpha  # Save the original value of Alpha
 
         tt_entry = self._transposition_table.get(node)  # Looking entry in transposition table
@@ -123,20 +130,23 @@ class NegamaxSearcher(AbstractSearcher):
                 alpha = max(alpha, tt_entry[2])
             elif tt_entry[1] is 2:  # Flag is UPPER BOUND
                 beta = min(beta, tt_entry[2])
-            if alpha >= beta:
-                return tt_entry[2], tt_entry[3]
 
+        if alpha >= beta:
+            return tt_entry[2], tt_entry[3]
         if depth <= 0:
-            return player * self.get_heuristic_value(node), None
+            return self.get_heuristic_value(node), None
 
         valid_moves = node.get_all_valid_moves(player)
 
         if len(valid_moves) is 0:
             enemy_valid_moves = node.get_all_valid_moves(-player)
             if len(enemy_valid_moves) is 0:
-                return player * self.get_heuristic_value(node), None
+                return self.get_heuristic_value(node), None
+            else:
+                result = self.__search(node, depth, -beta, -alpha, -player)
+                return -result[0], result[1]
 
-        best_value, best_move = -1000, None
+        best_value, best_move = -maxint, None
         for mov, new_node in valid_moves.iteritems():
             result = self.__search(new_node, depth - 1, -beta, -alpha, -player)
             value = -result[0]  # Value of this node
