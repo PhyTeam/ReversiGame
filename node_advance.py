@@ -228,6 +228,15 @@ class BitBoard(Node):
 
         return all_candidate_moves
 
+    def __hash__(self):
+        h1 = self.bitboard[C_PLAYER1] & 0xFFFFFFFF
+        h1 |= (self.bitboard[C_PLAYER1] >> 32) & 0xFFFFFFFF
+
+        h2 = self.bitboard[C_PLAYER2] & 0xFFFFFFFF
+        h2 |= (self.bitboard[C_PLAYER2] >> 32) & 0xFFFFFFFF
+
+        return h1 | h2
+
     def get_at(self, row, colunm):
         """
         This is a method to get a square in bit board
