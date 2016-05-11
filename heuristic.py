@@ -166,3 +166,6 @@ class heuristic(AbstractHeuristic):
         else:
             return self.eval_late_game(node)
 
+
+def something():
+    print "HEllo"
