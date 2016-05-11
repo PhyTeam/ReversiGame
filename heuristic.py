@@ -5,7 +5,7 @@ class heuristic(AbstractHeuristic):
 
     def isSafe(self, node, x, y):
         """
-        :param: x,y : position in node board
+        :param:     x,y : position in node board
         :return: False if player at x,y is can be eaten by opponent
                  True if not
         """
