@@ -46,7 +46,7 @@ class BestHeuristic(AbstractHeuristic):
         reached = good_1 + good_2
         if strong_1 + strong_2 == 0 or good_1 + good_2 == 0:
             return 0
-        # return (strong_1-strong_2) / (strong_1 + strong_2) * (64 - reached) + (good_1 - good_2)/(good_1 + good_2) * reached
-        return strong_1 - strong_2
+        return (strong_1-strong_2) / (strong_1 + strong_2) * (64 - reached) + (good_1 - good_2)/(good_1 + good_2) * reached
+        #return strong_1 - strong_2
         # return  strong_1/good_1 - strong_2/good_2
         # return node.get_score(my_index) - node.get_score(enemy_index)

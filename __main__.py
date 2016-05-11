@@ -57,7 +57,7 @@ class ReversiClient(PlayReversi):
         # Generate a bitboard node
         current_node = self.make_bit_board(board)
         # current_node = Node(updated_board)
-        heuristic, move = self._searcher.search(current_node, 10, self._player)
+        heuristic, move = self._searcher.search(current_node, 6, self._player)
         return {'X': move[1], 'Y': move[0]}
 
     def update_board(self, updated_board):
@@ -67,7 +67,7 @@ class ReversiClient(PlayReversi):
 
 from node_advance import *
 if __name__ == "__main__":
-    heuristic = DummyHeuristic()
+    heuristic = BestHeuristic()
     #heuristic = heuristic()
     begin = BitBoard(None)
     #begin = Node.create()
