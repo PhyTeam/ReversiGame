@@ -1,5 +1,5 @@
 from abstract_heuristic import *
-from node_advance import popcount
+
 
 class heuristic(AbstractHeuristic):
 
@@ -175,6 +175,8 @@ h2 = h10 | h1 | h3 | h4
 h2 = ~ h2
 
 class HeuristicAdvance(AbstractHeuristic):
+    score_lookup_table = []
+
     def is_safe(self, node, x, y):
         """"""
 
@@ -278,35 +280,39 @@ class HeuristicAdvance(AbstractHeuristic):
                     break
         return True
 
+    def precompute(self):
+        point_board = \
+            [[10, 1, 3, 2, 2, 3, 1, 10],
+             [1, 1, 2, 2, 2, 2, 1, 1],
+             [3, 2, 4, 2, 2, 4, 2, 3],
+             [2, 2, 2, 2, 2, 2, 2, 2],
+             [2, 2, 2, 2, 2, 2, 2, 2],
+             [3, 2, 4, 2, 2, 4, 2, 3],
+             [1, 1, 2, 2, 2, 2, 1, 1],
+             [10, 1, 3, 2, 2, 3, 1, 10]]
+        precompute_table_lookup = []
+        for row in xrange(4):
+            table = {}
+            for i in xrange(2 ** 8):
+                value = 0
+                for j in xrange(8):
+                    value += ((i >> j) & 1) * point_board[0][j]
+                table[i] = value
+            precompute_table_lookup[row] = table
+
+        return precompute_table_lookup
+
+    def score_table_heuristic(self, node):
+        player = node.bitboard[1]
+        opponent = node.bitboard[-1]
+        score = 0
+        for row in xrange(8):
+            score += self.score_lookup_table[row % 4][(player >> 8) & 0xFF]
+        return score
+
     def eval_early_game(self, node):
-        """"""
-        """point_board = [[10, 1, 3, 2, 2, 3, 1, 10],
-                       [1, 1, 2, 2, 2, 2, 1, 1],
-                       [3, 2, 4, 2, 2, 4, 2, 3],
-                       [2, 2, 2, 2, 2, 2, 2, 2],
-                       [2, 2, 2, 2, 2, 2, 2, 2],
-                       [3, 2, 4, 2, 2, 4, 2, 3],
-                       [1, 1, 2, 2, 2, 2, 1, 1],
-                       [10, 1, 3, 2, 2, 3, 1, 10]] """
-
-        res = 0
-        p10 = popcount(h10 & node.bitboard[1])
-        p1 = popcount(h1 & node.bitboard[1])
-        p2 = popcount(h2 & node.bitboard[1])
-        p3 = popcount(h3 & node.bitboard[1])
-        p4 = popcount(h4 & node.bitboard[1])
-
-        o10 = popcount(h10 & node.bitboard[-1])
-        o1 = popcount(h1 & node.bitboard[-1])
-        o2 = popcount(h2 & node.bitboard[-1])
-        o3 = popcount(h3 & node.bitboard[-1])
-        o4 = popcount(h4 & node.bitboard[-1])
-
-        res = 10*(p10 - o10) + (p1 - o1) + 2*(p2 - o2) + 3*(p3 - o3) + 4*(p4 - o4)
-        """for i in range(8):
-            for j in range(8):
-                res += point_board[i][j] * node.get_at(i,j)"""
-        return res
+        """Fast implement """
+        return self.score_table_heuristic(node)
 
     def eval_mid_game(self, node):
         """"""

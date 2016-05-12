@@ -1,3 +1,5 @@
+import gmpy2
+
 from node import Node
 
 # Declare const
@@ -198,13 +200,15 @@ def popcount(x):
     Efficient methods for counting the on-bits in an integer
     It uses 17 arithmetic operations.
     """
-    x -= (x >> 1) & m1  # put count of each 2 bits into those 2 bits
-    x = (x & m2) + ((x >> 2) & m2)  # put count of each 4 bits into those 4 bits
-    x = (x + (x >> 4)) & m4  # put count of each 8 bits into those 8 bits
-    x += x >> 8  # put count of each 16 bits into their lowest 8 bits
-    x += x >> 16  # put count of each 32 bits into their lowest 8 bits
-    x += x >> 32  # put count of each 64 bits into their lowest 8 bits
-    return x & 0x7f
+    # x -= (x >> 1) & m1  # put count of each 2 bits into those 2 bits
+    # x = (x & m2) + ((x >> 2) & m2)  # put count of each 4 bits into those 4 bits
+    # x = (x + (x >> 4)) & m4  # put count of each 8 bits into those 8 bits
+    # x += x >> 8  # put count of each 16 bits into their lowest 8 bits
+    # x += x >> 16  # put count of each 32 bits into their lowest 8 bits
+    # x += x >> 32  # put count of each 64 bits into their lowest 8 bits
+    # return x & 0x7f
+    # Using library
+    return gmpy2.popcount(x)
 
 def shift_left(position):
     return (position >> 1) & inv_slm
@@ -275,6 +279,7 @@ def dilation(bits, d=None, is_inverted=False):
 
 
 class BitBoard(Node):
+
     bitboard = {
         # 0x00\00\00\08\10\00\00\00
         C_PLAYER1: 0x0000000810000000,
@@ -344,8 +349,10 @@ class BitBoard(Node):
         for i in xrange(8):
             for j in xrange(8):
                 pos = self.__position(i, j)
-                if self.__get_at(pos, C_PLAYER1) | self.__get_at(pos, C_PLAYER2) != 0:
+                if self.__get_at(pos, C_PLAYER1) != 0:
                     tostring += '1'
+                elif self.__get_at(pos, C_PLAYER2) != 0:
+                    tostring += '2'
                 else:
                     tostring += '0'
             tostring += '\n'
@@ -355,7 +362,7 @@ class BitBoard(Node):
         super(BitBoard, self).__init__(board)
         self._hashcode = 0
 
-    def get_all_valid_moves(self, player):
+    def __valid_moves(self, player):
         moves = {}
         empty = ~(self.bitboard[C_PLAYER1] | self.bitboard[C_PLAYER2])
         for d in direction.keys():
@@ -365,21 +372,37 @@ class BitBoard(Node):
                 dmove |= empty & dilation(candidates, d)
                 candidates = self.bitboard[-player] & dilation(candidates, d)
             moves[d] = dmove
+        return moves
+
+    def get_all_valid_moves(self, player):
+        avalible_move = 0
+        moves = self.__valid_moves(player)
+
+        for m in moves.values():
+            avalible_move |= m
+
         all_candidate_moves = {}
-        for keys, values in moves.iteritems():
-            if values != 0:
-                # Select a random valid move
-                # Try
-                bit2xy = self.__to_x_y(values)
-                for valid_move in bit2xy:
-                    x, y = valid_move[0], valid_move[1]
-                    flipped_square = self.__generate_flipped_squares(1 << (x * 8 + y), keys, player)
-                    bstr = self.__gererate_new_board(flipped_square, player)
-                    new_board = BitBoard(None)
-                    new_board.bitboard = bstr
-                    all_candidate_moves[(x, y)] = new_board
+        idx = gmpy2.bit_scan1(avalible_move, 0)
+        while idx is not None:
+            mask = 1 << idx
+            flipped_square = 0
+            for dir in direction.keys():
+                if mask & moves[dir] != 0:
+                    flipped_square |= self.__generate_flipped_squares(mask, dir, player)
+            bstr = self.__gererate_new_board(flipped_square, player)
+            new_board = BitBoard(None)
+            new_board.bitboard = bstr
+            all_candidate_moves[(idx / 8, idx % 8)] = new_board
+            idx = gmpy2.bit_scan1(avalible_move, idx + 1)
 
         return all_candidate_moves
+
+    def get_mobility(self, player):
+        valid_moves = self.__valid_moves(player)
+        move_in_all_dir = 0
+        for vm in valid_moves.values():
+            move_in_all_dir |= vm
+        return gmpy2.popcount(move_in_all_dir)
 
     def __hash__(self):
         if self._hashcode == 0:
@@ -453,14 +476,15 @@ def anlysis(node, depth, player):
 if __name__ == "__main__":
     print "Unit test for bitboard"
     bb = BitBoard(None)
-    print "Player 1", bb.get_score(C_PLAYER1)
-    print "Player 2", bb.get_score(C_PLAYER2)
-    print bitboard_tostring(bb.bitboard[C_PLAYER1])
-    print bb.get_at(4, 4)
-    for i in xrange(100000):
-        if i != 0:
-            bb.one_bits(0b100000000000000)
-
+    # bb.bitboard[C_PLAYER1] = 0x44
+    # bb.bitboard[C_PLAYER2] = 0x28
+    test = bb.get_all_valid_moves(1)
+    print test
+    print bb.get_mobility(1)
+    for v, b in test.iteritems():
+        print v
+        print b
+        print "\n"
     # print bb
 """
     nb = Node.create()
