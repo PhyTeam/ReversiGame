@@ -174,6 +174,14 @@ h4 = 0x0000240000240000
 h2 = h10 | h1 | h3 | h4
 h2 = ~ h2
 
+
+def packA1A8(X):
+    return ((((X) & 0x0101010101010101) * 0x0102040810204080) >> 56)
+
+
+def packH1H8(X):
+    return ((((X) & 0x8080808080808080) * 0x0002040810204081) >> 56)
+
 class HeuristicAdvance(AbstractHeuristic):
     score_lookup_table = []
 
