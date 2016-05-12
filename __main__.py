@@ -67,8 +67,9 @@ class ReversiClient(PlayReversi):
 
 from node_advance import *
 if __name__ == "__main__":
-    heuristic = BestHeuristic()
+    #heuristic = BestHeuristic()
     #heuristic = heuristic()
+    heuristic = HeuristicUpdate()
     begin = BitBoard(None)
     #begin = Node.create()
     searcher = NegamaxSearcher(heuristic)
