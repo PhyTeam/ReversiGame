@@ -170,14 +170,24 @@ class NegamaxSearcher(AbstractSearcher):
 
 
 class NegamaxWithDeepeningSearcher(AbstractSearcher):
-    schedule = {0: 60 * 0.8, 1: 60 * 1.9, 2: 4, 3: 14, 4: None, 5: None}
+    schedule = {0: 60 * 1.5, 1: 60 * 1.9, 2: 4, 3: 14, 4: None, 5: None}
 
     def __init__(self, heuristic):
         AbstractSearcher.__init__(self, heuristic)
         self._is_endgame = False
 
     def search(self, node, depth, player):
+        num_empties_left = 64 - node.get_score(player) - node.get_score(-player)
+
+        if num_empties_left <= self.schedule[3]:
+            self._is_endgame = True
+
         search_depth = self.get_suggested_depth(self.schedule[0], self.schedule[1], self.schedule[3], self.schedule[2], node, player, self.schedule[4], self.schedule[5])
+
+        # print "Previous search time:", self.schedule[4]
+        # print "Previous depth counter:", self.schedule[5]
+
+        # print "Next depth is:", search_depth
 
         depth_counter = self.get_new_depth_counters(search_depth)
         start_time = clock()
@@ -185,10 +195,16 @@ class NegamaxWithDeepeningSearcher(AbstractSearcher):
         search_time = clock() - start_time
         self.schedule[4] = search_time
         self.schedule[5] = depth_counter
+        self.schedule[1] -= search_time
+        if num_empties_left > self.schedule[3]:
+            self.schedule[0] -= search_time
+        # print "Search time is:", search_time
+        # print "Remain time:", self.schedule[1]
+        # print "Reamin midgame time:", self.schedule[0]
         return result
 
     def __search(self, node, depth, alpha, beta, player, depth_counters=None):
-        if depth_counters:
+        if depth_counters is not None:
             depth_counters[depth] += 1
 
         if depth <= 0:
@@ -209,12 +225,12 @@ class NegamaxWithDeepeningSearcher(AbstractSearcher):
                     result = self.get_heuristic_value(node)
                 return player * result, None
             else:
-                result = self.__search(node, depth, -beta, -alpha, -player)
+                result = self.__search(node, depth, -beta, -alpha, -player, depth_counters)
                 return -result[0], result[1]
 
         best_value, best_move = -maxint, None
         for mov, new_node in valid_moves.iteritems():
-            result = self.__search(new_node, depth - 1, -beta, -alpha, -player)
+            result = self.__search(new_node, depth - 1, -beta, -alpha, -player, depth_counters)
             value = -result[0]  # Value of this node
             if value > best_value:
                 best_value, best_move = value, mov
@@ -281,7 +297,7 @@ class NegamaxWithDeepeningSearcher(AbstractSearcher):
         if num_empties_left > end_game_num_empties:  # Still midgame
 
             if previous_depth_counters == None or previous_depth_counters == None:  # not first search
-                test_search_depth = 6
+                test_search_depth = 8
                 previous_depth_counters = self.get_new_depth_counters(test_search_depth)
                 time_start = clock()
                 # Just do a shallow search...
@@ -299,17 +315,20 @@ class NegamaxWithDeepeningSearcher(AbstractSearcher):
             return max(min_search_depth,
                        self.get_max_suggested_depth(previous_depth_counters, previous_search_time, time_for_search))
         else:
-            if previous_depth_counters != None and previous_depth_counters != None:
-                # Check if capable of searching to endgame...
-                time_for_search = game_time_left * 0.7  # Assume that end game takes 70% of remaining time
-                max_suggested_depth = self.get_max_suggested_depth(previous_depth_counters, previous_search_time, time_for_search)
-                if max_suggested_depth >= end_game_num_empties:
-                    return 61  # Proceed to endgame
-                else:  # Do a pre-end game search
-                    return max(min_search_depth,
-                               self.get_max_suggested_depth(previous_depth_counters, previous_search_time, time_for_search * 0.7))
-            else:  # We were already confident to proceed with endgame
-                return 61
+            if num_empties_left <= 14:
+                return num_empties_left
+            else:
+                if previous_depth_counters != None and previous_depth_counters != None:
+                    # Check if capable of searching to endgame...
+                    time_for_search = game_time_left * 0.7  # Assume that end game takes 70% of remaining time
+                    max_suggested_depth = self.get_max_suggested_depth(previous_depth_counters, previous_search_time, time_for_search)
+                    if max_suggested_depth >= end_game_num_empties:
+                        return num_empties_left
+                    else:  # Do a pre-end game search
+                        return max(min_search_depth,
+                                   self.get_max_suggested_depth(previous_depth_counters, previous_search_time, time_for_search * 0.7))
+                else:  # We were already confident to proceed with endgame
+                    return num_empties_left
 
 class AlphaBetaWidthIterativeDeepening(AbstractSearcher):
     def search(self, node, depth, player):
