@@ -2,6 +2,7 @@ import gmpy2
 
 from node import Node
 
+
 # Declare const
 C_PLAYER1, C_PLAYER2 = 1, -1
 shift_left_mask = -9187201950435737472
@@ -375,6 +376,19 @@ class BitBoard(Node):
         return moves
 
     def get_all_valid_moves(self, player):
+        all_candidate_moves = {}
+        result = self.getMoves(self.bitboard[player], self.bitboard[-player])
+        for m, flipped_square in result:
+            x = gmpy2.bit_scan1(m) / 8
+            y = gmpy2.bit_scan1(m) % 8
+            bstr = self.__gererate_new_board(flipped_square, player)
+            new_board = BitBoard(None)
+            new_board.bitboard = bstr
+            new_board.bitboard[player] |= m
+            all_candidate_moves[(x, y)] = new_board
+        return all_candidate_moves
+
+
         avalible_move = 0
         moves = self.__valid_moves(player)
 
@@ -396,6 +410,159 @@ class BitBoard(Node):
             idx = gmpy2.bit_scan1(avalible_move, idx + 1)
 
         return all_candidate_moves
+
+    def getMoves(self, player, opponent):
+        blank = ~ (player | opponent)
+        # Get mobility Left
+        w = opponent & 0x7e7e7e7e7e7e7e7e
+        t = w & (player >> 1)
+        t |= w & (t >> 1)
+        v = w & (w >> 1)
+        t |= v & (t >> 2)
+        t |= v & (t >> 2)
+        rLeft = blank & (t >> 1)
+        # Get mobility Right
+        t = w & (player << 1)
+        t |= w & (t << 1)
+        v = w & (w << 1)
+        t |= v & (t << 2)
+        t |= v & (t << 2)
+        rRight = blank & (t << 1)
+        # Get mobility Top
+        w = opponent & 0x00ffffffffffff00
+        t = w & (player >> 8)
+        t |= w & (t >> 8)
+        v = w & (w >> 8)
+        t |= v & (t >> 16)
+        t |= v & (t >> 16)
+        rTop = blank & (t >> 8)
+        # Get mobility Bottom
+        t = w & (player << 8)
+        t |= w & (t << 8)
+        v = w & (w << 8)
+        t |= v & (t << 16)
+        t |= v & (t << 16)
+        rBottom = blank & (t << 8)
+        # Get mobility Left Top
+        w = opponent & 0x007e7e7e7e7e7e00
+        t = w & (player >> 9)
+        t |= w & (t >> 9)
+        v = w & (w >> 9)
+        t |= v & (t >> 18)
+        t |= v & (t >> 18)
+        rLeftTop = blank & (t >> 9)
+        # Get mobility Left Bottom
+        t = w & (player << 7)
+        t |= w & (t << 7)
+        v = w & (w << 7)
+        t |= v & (t << 14)
+        t |= v & (t << 14)
+        rLeftBottom = blank & (t << 7)
+        # Get mobility Right Top
+        t = w & (player >> 7)
+        t |= w & (t >> 7)
+        v = w & (w >> 7)
+        t |= v & (t >> 14)
+        t |= v & (t >> 14)
+        rRightTop = blank & (t >> 7)
+        # Get mobility Right Bottom
+        t = w & (player << 9)
+        t |= w & (t << 9)
+        v = w & (w << 9)
+        t |= v & (t << 18)
+        t |= v & (t << 18)
+        rRightBottom = blank & (t << 9)
+        r = rLeft | rRight | rTop | rBottom | rLeftTop | rLeftBottom | rRightTop | rRightBottom
+        # Extract moves and reversed tiles
+        moves = []
+        while r:
+            m = r & -r
+            rev = 0
+            # Left
+            if rLeft & m:
+                mask = (m << 1) & 0xfefefefefefefefe
+                if mask:
+                    _rev = 0
+                    while mask & opponent:
+                        _rev |= mask
+                        mask = (mask << 1) & 0xfefefefefefefefe
+                    if mask & player:
+                        rev |= _rev
+            # Right
+            if rRight & m:
+                mask = (m >> 1) & 0x7f7f7f7f7f7f7f7f
+                if mask:
+                    _rev = 0
+                    while mask & opponent:
+                        _rev |= mask
+                        mask = (mask >> 1) & 0x7f7f7f7f7f7f7f7f
+                    if mask & player:
+                        rev |= _rev
+            # Top
+            if rTop & m:
+                mask = (m << 8) & 0xffffffffffffff00
+                if mask:
+                    _rev = 0
+                    while mask & opponent:
+                        _rev |= mask
+                        mask = (mask << 8) & 0xffffffffffffff00
+                    if mask & player:
+                        rev |= _rev
+            # Bottom
+            if rBottom & m:
+                mask = (m >> 8) & 0x00ffffffffffffff
+                if mask:
+                    _rev = 0
+                    while mask & opponent:
+                        _rev |= mask
+                        mask = (mask >> 8) & 0x00ffffffffffffff
+                    if mask & player:
+                        rev |= _rev
+            # Left Top
+            if rLeftTop & m:
+                mask = (m << 9) & 0xfefefefefefefe00
+                if mask:
+                    _rev = 0
+                    while mask & opponent:
+                        _rev |= mask
+                        mask = (mask << 9) & 0xfefefefefefefe00
+                    if mask & player:
+                        rev |= _rev
+            # Left Bottom
+            if rLeftBottom & m:
+                mask = (m >> 7) & 0x00fefefefefefefe
+                if mask:
+                    _rev = 0
+                    while mask & opponent:
+                        _rev |= mask
+                        mask = (mask >> 7) & 0x00fefefefefefefe
+                    if mask & player:
+                        rev |= _rev
+            # Right Top
+            if rRightTop & m:
+                mask = (m << 7) & 0x7f7f7f7f7f7f7f00
+                if mask:
+                    _rev = 0
+                    while mask & opponent:
+                        _rev |= mask
+                        mask = (mask << 7) & 0x7f7f7f7f7f7f7f00
+                    if mask & player:
+                        rev |= _rev
+            # Right Bottom
+            if rRightBottom & m:
+                mask = (m >> 9) & 0x007f7f7f7f7f7f7f
+                if mask:
+                    _rev = 0
+                    while mask & opponent:
+                        _rev |= mask
+                        mask = (mask >> 9) & 0x007f7f7f7f7f7f7f
+                    if mask & player:
+                        rev |= _rev
+
+            moves.append((m, rev))  # Append move and reversed tiles
+            r &= r - 1  # Remove smallest bit
+
+        return moves
 
     def get_mobility(self, player):
         valid_moves = self.__valid_moves(player)
@@ -479,13 +646,50 @@ if __name__ == "__main__":
     # bb.bitboard[C_PLAYER1] = 0x44
     # bb.bitboard[C_PLAYER2] = 0x28
     test = bb.get_all_valid_moves(1)
-    print test
-    print bb.get_mobility(1)
-    for v, b in test.iteritems():
-        print v
-        print b
-        print "\n"
+
     # print bb
+
+    arr = [[-1, -1, -1, 2, -1, -1, -1, -1],
+           [-1, -1, -1, 2, 2, -1, -1, 2],
+           [-1, 2, 2, 2, 1, 2, 2, 2],
+           [-1, -1, 2, 2, 1, 1, 2, 2],
+           [-1, -1, 2, 2, 1, 1, 1, -1],
+           [-1, -1, 2, 2, 2, 2, -1, -1],
+           [-1, -1, -1, 2, -1, -1, -1, -1],
+           [1, -1, 2, -1, -1, 2, -1, -1]]
+    map_function = {
+        -1: 0,
+        2: -1,
+        1: 1
+    }
+    board = arr
+    new_board = arr
+    black, white = 0, 0
+    for i in xrange(8):
+        for j in xrange(8):
+            temp = board[i][j]
+            board[i][j] = map_function[temp]
+            new_board[i][j] = map_function[temp]
+            # Calculate bitboard
+            if board[i][j] == 1:
+                black |= 1 << (i * 8 + j)
+            elif board[i][j] == -1:
+                white |= 1 << (i * 8 + j)
+    # Create a bitboard node
+    bit_board = BitBoard(None)
+    n_board = Node(new_board)
+    bit_board.bitboard[1] = black
+    bit_board.bitboard[-1] = white
+
+    result = bit_board.get_all_valid_moves(1)
+    for v1, v2 in result.iteritems():
+        print v1
+        print v2
+        # print gmpy2.bit_scan1(v1) / 8, gmpy2.bit_scan1(v1) % 8
+
+        # print b
+        # print "\n"
+
 """
     nb = Node.create()
     start_time = 0

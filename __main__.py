@@ -55,12 +55,8 @@ class ReversiClient(PlayReversi):
         # current_node = Node(board)
 
         # Generate a bitboard node
-        #current_node = self.make_bit_board(board)
-        current_node = Node(updated_board)
-        for i in xrange(8):
-            for j in xrange(8):
-                current_node.board[i][j] = self.map_function[current_node.board[i][j]]
-
+        current_node = self.make_bit_board(board)
+        # current_node = Node(updated_board)
         #heuristic, move = self._searcher.search(current_node, 4, self._player)
         heuristic, move = self._searcher.search(current_node, self._player)
         return {'X': move[1], 'Y': move[0]}
@@ -72,12 +68,11 @@ class ReversiClient(PlayReversi):
 
 from node_advance import *
 if __name__ == "__main__":
-    #heuristic = BestHeuristic()
+    heuristic = BestHeuristic()
     # heuristic = HeuristicAdvance()
-    heuristic = HeuristicNam()
     begin = BitBoard(None)
     #begin = Node.create()
-    searcher = AlphaBetaSearcher(heuristic)
+    searcher = NegamaxWithDeepeningSearcher(heuristic)
     turn = int(raw_input("Enter your turn: "))
     # searcher.search(begin, 10, turn)
     handler = ReversiClient(searcher, turn)
