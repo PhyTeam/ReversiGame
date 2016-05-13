@@ -1,5 +1,5 @@
 from copy import copy
-from time import clock
+
 from heuristic import *
 from reversi_client import *
 from searcher import *
@@ -58,24 +58,22 @@ class ReversiClient(PlayReversi):
         current_node = self.make_bit_board(board)
         # current_node = Node(updated_board)
         #heuristic, move = self._searcher.search(current_node, 4, self._player)
-        start_time = clock()
         heuristic, move = self._searcher.search(current_node, self._player)
-        print "Search time is:", clock() - start_time
         return {'X': move[1], 'Y': move[0]}
 
     def update_board(self, updated_board):
-        # print (updated_board.__str__())
+        print (updated_board.__str__())
         super(ReversiClient, self).update_board(updated_board)
 
 
 from node_advance import *
 if __name__ == "__main__":
-    heuristic = HeuristicNam()
+    heuristic = BestHeuristic()
     # heuristic = HeuristicAdvance()
     begin = BitBoard(None)
     #begin = Node.create()
     searcher = NegamaxWithDeepeningSearcher(heuristic)
     turn = int(raw_input("Enter your turn: "))
-    # searcher.search(begin, 10, turn)
+    # searcher.search(begin, 5, 1)
     handler = ReversiClient(searcher, turn)
     play(handler)
