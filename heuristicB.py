@@ -5,14 +5,14 @@ class heuristicB():
     __chess_table = 0
     __sum_point = 0
     point_board = [
-        [10, 1, 3, 2, 2, 3, 1, 10],
-        [1, 1, 2, 2, 2, 2, 1, 1],
-        [3, 2, 4, 2, 2, 4, 2, 3],
-        [2, 2, 2, 2, 2, 2, 2, 2],
-        [2, 2, 2, 2, 2, 2, 2, 2],
-        [3, 2, 4, 2, 2, 4, 2, 3],
-        [1, 1, 2, 2, 2, 2, 1, 1],
-        [10, 1, 3, 2, 2, 3, 1, 10]
+        [24, 0, 8, 8, 8, 8, 0, 24],
+        [0, 0, 4, 4, 4, 4, 0, 0],
+        [8, 4, 4, 2, 2, 4, 4, 8],
+        [8, 4, 2, 2, 2, 2, 4, 8],
+        [8, 4, 2, 2, 2, 2, 4, 8],
+        [8, 4, 4, 2, 2, 4, 4, 8],
+        [0, 0, 4, 4, 4, 4, 0, 0],
+        [24, 0, 8, 8, 8, 8, 0, 24]
     ]
 
     def __init__(self, node):
@@ -105,7 +105,25 @@ class heuristicB():
         else:
             return 0
 
-    def count_value_of_chess_table(self):
+    def if_path_belong_to_player(self, node, player, path_id, curr_player):
+        """
+        :param node:
+        :param player:
+        :param path_id:
+            == 0 : left
+            == 1 : right
+            == 2 : bottom
+            == 3 : top
+        :return:
+        """
+
+        #if path_id == 0:
+
+
+
+        return 1
+
+    def update_point_board(self):
         #return sum value of squares that has no
         return 0;
 
@@ -123,22 +141,176 @@ class heuristicB():
         point += self.get_checking_path_value(node, i + 1, j - 1, 7, 0, False, player)
         return point
 
-    def get_number_of_safe(self, node, player):
+    def get_number_of_safe_man(self, node, player):
         """
         :return: get the number of safe chessman that's guaranteed not be able to be eaten from the current time to end
         """
-        safe_man = 0 #return safe_man
-        #start checking at position [0,0]
+        safe_man = 0  # return safe_man
+        # start checking at position [0,0]
         x_start = 0
         y_start = 0
 
-        while True: #check on each of line of board (start at row = 0)
-            columns_safe = [True, True, True, True, True, True, True, True]
+        _arrived = [[0 for x in range(8)] for y in range(8)]
+        for i in xrange(8):
+            for j in xrange(8):
+                _arrived[i][j] = False
+
+        _row = 0
+        _col = 0
+        _max = 8
+        if node.get_at(_row,_col) == player:
+            while True:
+                if _col < 8 and node.get_at(_row,_col) == player:
+                    if _arrived[_row][_col] == False:
+                        _arrived[_row][_col] = True
+                        safe_man += 1
+                    # Check on a column
+                    while True:
+                        _row += 1
+                        if _row < _max and node.get_at(_row,_col) == player:
+                            if _arrived[_row][_col] == False:
+                                _arrived[_row][_col] = True
+                                safe_man += 1
+                        else:
+                            _max = _row - 1
+                            #print _max
+                            break
+                    _row = 0
+                    _col += 1;
+                else:
+                    break
+        else:
+            flag = True
+            count = [False, False, False, False, False, False, False, False]
             for i in xrange(8):
-                return  0
+                if node.get_at(_row,i) == 0:
+                    flag = False
+                    break
+                elif node.get_at(_row, i) == player:
+                    count[i] = True
+            if flag:
+                for i in xrange(8):
+                    if count[i] and _arrived[_row][i] == False:
+                        _arrived[_row][i] = True
+                        safe_man += 1
 
 
-        return 0
+        _row = 7
+        _col = 7
+        _max = -1
+        if node.get_at(_row, _col) == player:
+            while True:
+                if _col >= 0 and node.get_at(_row,_col)== player:
+                    if _arrived[_row][_col] == False:
+                        _arrived[_row][_col] = True
+                        safe_man += 1
+                    # Check on a column
+                    while True:
+                        _row -= 1
+                        if _row > max and node.get_at(_row,_col)== player:
+                            if _arrived[_row][_col] == False:
+                                _arrived[_row][_col] = True
+                                safe_man += 1
+                        else:
+                            _max = _row + 1
+                            break
+                    _row = 7
+                    _col -= 1;
+                else:
+                    break
+        else:
+            flag = True
+            count = [False, False, False, False, False, False, False, False]
+            for i in xrange(8):
+                if node.get_at(_row, 7 - i) == 0:
+                    flag = False
+                    break
+                elif node.get_at(_row, 7 - i) == player:
+                    count[i] = True
+            if flag:
+                for i in xrange(8):
+                    if count[i] and _arrived[_row][7 - i] == False:
+                        _arrived[_row][7 - i] = True
+                        safe_man += 1
+
+        _row = 0
+        _col = 7
+        _max = -1
+        if node.get_at(_row, _col) == player:
+            while True:
+                if _row < 8 and node.get_at(_row,_col) == player:
+                    if _arrived[_row][_col] == False:
+                        _arrived[_row][_col] = True
+                        safe_man += 1
+                    # Check on a column
+                    while True:
+                        _col -= 1
+                        if _col > _max and node.get_at(_row,_col)== player:
+                            if _arrived[_row][_col] == False:
+                                _arrived[_row][_col] = True
+                                safe_man += 1
+                        else:
+                            _max = _col + 1
+                            break
+                    _row += 1
+                    _col = 7;
+                else:
+                    break
+        else:
+            flag = True
+            count = [False, False, False, False, False, False, False, False]
+            for i in xrange(8):
+                if node.get_at(i, _col) == 0:
+                    flag = False
+                    break
+                elif node.get_at(i, _col) == player:
+                    count[i] = True
+            if flag:
+                for i in xrange(8):
+                    if count[i] and _arrived[i][_col] == False:
+                        _arrived[i][_col] = True
+                        safe_man += 1
+
+        _row = 7
+        _col = 0
+        _max = 8
+        if node.get_at(_row, _col) == player:
+            while True:
+                if _row >= 0 and node.get_at(_row,_col) == player:
+                    if _arrived[_row][_col] == False:
+                        _arrived[_row][_col] = True
+                        safe_man += 1
+                    # Check on a column
+                    while True:
+                        _col += 1
+                        if _col < _max and node.get_at(_row,_col) == player:
+                            if _arrived[_row][_col] == False:
+                                _arrived[_row][_col] = True
+                                safe_man += 1
+                        else:
+                            _max = _col - 1
+                            # print _max
+                            break
+                    _row -= 1
+                    _col = 0;
+                else:
+                    break
+        else:
+            flag = True
+            count = [False, False, False, False, False, False, False, False]
+            for i in xrange(8):
+                if node.get_at(7 - i, _col) == 0:
+                    flag = False
+                    break
+                elif node.get_at(7 - i, _col) == player:
+                    count[i] = True
+            if flag:
+                for i in xrange(8):
+                    if count[i] and _arrived[7 - i][_col] == False:
+                        _arrived[7 - i][_col] = True
+                        safe_man += 1
+
+        return _arrived
 
     def __is_Safe(self, node, i , j):
         return False
@@ -146,17 +318,30 @@ class heuristicB():
     def get_value_of_men(self, node, player):
         """Evaluate value of a chessman based on number of opponent's chessman around him [0-8]"""
 
-        point_sum = 0
+        point_sum1 = 0
+        point_sum2 = 0
+        point_sum3 = 0
+
+        safe_man = self.get_number_of_safe_man(node, player)
 
         for i in xrange(8):
             for j in xrange(8):
                 if node.get_at(i,j) == player:
                     #get value of strength
-                    point = self.get_point_of_a_chessman(node, i,j, player)
-                    #check if it safe to the end. If it is add ... to point2
-                    #isSafe = self.__is_Safe(node, i, j)
-                    #if isSafe:
-                        #point += 0
+                    point1 = self.get_point_of_a_chessman(node, i,j, player)
+                    point3 = self.point_board[i][j]
+                    #if i == 0 or j == 0 or i == 7 or j == 7:
+                        #point3 = 8
+                    #check if it safe until the end. If it is add ... to point2
+                    if safe_man[i][j] and point1 == 0:
+                        if (i == 0 and j == 0) or (i == 0 and j == 7) or (i == 7 and j == 7) or (i == 7 and j == 0):
+                            point2 = 48
+                        else:
+                            point2 = 32
+                    else:
+                        point2 = 0
                     # Add point into point_sum
-                    point_sum += point
-        return point_sum
+                    point_sum1 += point1; point_sum2+= point2;  point_sum3+= point3
+        return point_sum1 + point_sum2 + point_sum3
+
+
