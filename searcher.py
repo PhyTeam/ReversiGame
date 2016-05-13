@@ -173,6 +173,7 @@ class NegamaxSearcher(AbstractSearcher):
 class NegamaxWithDeepeningSearcher(AbstractSearcher):
     def __init__(self, heuristic):
         AbstractSearcher.__init__(self, heuristic)
+        self._is_endgame = False
         self._transposition_table = {}
 
     def search(self, node, player, timeout=2.0):
@@ -184,6 +185,7 @@ class NegamaxWithDeepeningSearcher(AbstractSearcher):
             max_depth = 6
         else:
             max_depth = 60 - n + 1
+            self._is_endgame = True
 
         current_depth = 1
 
@@ -219,14 +221,22 @@ class NegamaxWithDeepeningSearcher(AbstractSearcher):
         if alpha >= beta:
             return tt_entry[2], tt_entry[3]
         if depth <= 0:
-            return player * self.get_heuristic_value(node), None
+            if self._is_endgame is True:
+                result = node.get_score(player) - node.get_score(-player)
+            else:
+                result = self.get_heuristic_value(node)
+            return player * result, None
 
         valid_moves = node.get_all_valid_moves(player)
 
         if len(valid_moves) is 0:
             enemy_valid_moves = node.get_all_valid_moves(-player)
             if len(enemy_valid_moves) is 0:
-                return player * self.get_heuristic_value(node), None
+                if self._is_endgame is True:
+                    result = node.get_score(player) - node.get_score(-player)
+                else:
+                    result = self.get_heuristic_value(node)
+                return player * result, None
             else:
                 result = self.__search(node, depth, -beta, -alpha, -player)
                 return -result[0], result[1]
