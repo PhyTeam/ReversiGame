@@ -148,6 +148,9 @@ class Node(object):
         # No need, use length of list returned by get_all_valid_moves func
         pass
 
+    def get_at(self, row, col):
+        return self.board[row][col]
+
     def get_score(self, player):
         """
         :param player: ID of player
