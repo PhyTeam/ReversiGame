@@ -58,7 +58,7 @@ class MinMaxSearcher(AbstractSearcher):
         return max * player, moving
 
 
-class AlplaBetaSearcher(AbstractSearcher):
+class AlphaBetaSearcher(AbstractSearcher):
     __node_visited = 0
     __time_estimate = 0
     __eval_count = 0
@@ -70,13 +70,7 @@ class AlplaBetaSearcher(AbstractSearcher):
         self.__time_estimate = 0
         # Swapper function
         result = self.__search(node, depth, -maxint, maxint, player)
-        print "_________________________________________________"
-        print "| Node\t| Depth\t| Eval node\t|"
-        print "_________________________________________________"
-        print "| ", self.__node_visited, "\t",
-        print "| ", depth, "\t",
-        print "| ", self.__eval_count, "\t", "|"
-        print "_________________________________________________"
+
         return result
 
     def __search(self, node, depth, alpha, beta, player):
@@ -95,7 +89,8 @@ class AlplaBetaSearcher(AbstractSearcher):
             if len(enemy_valid_moves) == 0:
                 return player * self.get_heuristic_value(node), None
             else:
-                return - self.__search(node, depth, -beta, -alpha, -player)
+                result = self.__search(node, depth, -beta, -alpha, -player)
+                return -result[0], result[1]
 
         best_value, best_move = -maxint, None
 
@@ -180,7 +175,7 @@ class NegamaxWithDeepeningSearcher(AbstractSearcher):
         AbstractSearcher.__init__(self, heuristic)
         self._transposition_table = {}
 
-    def search(self, node, player, timeout=2.2):
+    def search(self, node, player, timeout=2.0):
         self._transposition_table.clear()
 
         n = node.get_score(node.PLAYER_1) + node.get_score(node.PLAYER_2) - 4
