@@ -2,7 +2,7 @@ from copy import copy
 
 from heuristic import *
 from reversi_client import *
-
+from searcher import *
 
 class ReversiClient(PlayReversi):
     map_function = {
@@ -72,8 +72,8 @@ if __name__ == "__main__":
     # heuristic = HeuristicAdvance()
     begin = BitBoard(None)
     #begin = Node.create()
-    searcher = AlplaBetaSearcher(heuristic)
-    # turn = int(raw_input("Enter your turn: "))
-    searcher.search(begin, 5, 1)
-    # handler = ReversiClient(searcher, turn)
-    # play(handler)
+    searcher = NegamaxWithDeepeningSearcher(heuristic)
+    turn = int(raw_input("Enter your turn: "))
+    #searcher.search(begin, 10, turn)
+    handler = ReversiClient(searcher, turn)
+    play(handler)

@@ -51,8 +51,7 @@ def play(handler):
     global play_reversi
     play_reversi = handler
     # Use socketio with defined Namespace
-    socketIO = SocketIO('localhost', 8100, params={'token': token})
-    gameplay = socketIO.define(ReversiNamespace, '/play')
+    socketIO = SocketIO('localhost', 8100, ReversiNamespace, params={'token': token})
 
     socketIO.wait()
 
