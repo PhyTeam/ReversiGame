@@ -74,6 +74,6 @@ if __name__ == "__main__":
     #begin = Node.create()
     searcher = NegamaxWithDeepeningSearcher(heuristic)
     turn = int(raw_input("Enter your turn: "))
-    #searcher.search(begin, 10, turn)
+    # searcher.search(begin, 5, 1)
     handler = ReversiClient(searcher, turn)
     play(handler)

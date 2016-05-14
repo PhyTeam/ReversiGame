@@ -2,7 +2,6 @@ from sys import maxint
 import timeit
 from time import clock
 
-
 class AbstractSearcher:
     """ Lop truu tuong cu cac lop tim kiem"""
     _heuristic = None
@@ -175,68 +174,66 @@ class NegamaxSearcher(AbstractSearcher):
 
 
 class NegamaxWithDeepeningSearcher(AbstractSearcher):
+    schedule = {0: 60 * 1.5, 1: 60 * 1.9, 2: 4, 3: 14, 4: None, 5: None}
+
     def __init__(self, heuristic):
         AbstractSearcher.__init__(self, heuristic)
-        self._transposition_table = {}
+        self._is_endgame = False
 
-    def search(self, node, player, timeout=2.0):
-        self._transposition_table.clear()
+    def search(self, node, depth, player):
+        num_empties_left = 64 - node.get_score(player) - node.get_score(-player)
 
-        n = node.get_score(node.PLAYER_1) + node.get_score(node.PLAYER_2) - 4
+        if num_empties_left <= self.schedule[3]:
+            self._is_endgame = True
 
-        if n < 50:
-            max_depth = 6
-        else:
-            max_depth = 60 - n + 1
+        search_depth = self.get_suggested_depth(self.schedule[0], self.schedule[1], self.schedule[3], self.schedule[2], node, player, self.schedule[4], self.schedule[5])
 
-        current_depth = 1
+        # print "Previous search time:", self.schedule[4]
+        # print "Previous depth counter:", self.schedule[5]
 
+        # print "Next depth is:", search_depth
+
+        depth_counter = self.get_new_depth_counters(search_depth)
         start_time = clock()
-
-        result = self.__search(node, current_depth, -maxint, maxint, player)
-
-        while clock() - start_time < timeout and current_depth <= max_depth:
-            current_depth += 1
-            result = self.__search(node, current_depth, -maxint, maxint, player)
-
-        print "Last depth searched:", current_depth - 1
-        print "Search time is:", clock() - start_time
-
+        result = self.__search(node, search_depth, -maxint, maxint, player, depth_counter)
+        search_time = clock() - start_time
+        self.schedule[4] = search_time
+        self.schedule[5] = depth_counter
+        self.schedule[1] -= search_time
+        if num_empties_left > self.schedule[3]:
+            self.schedule[0] -= search_time
+        # print "Search time is:", search_time
+        # print "Remain time:", self.schedule[1]
+        # print "Reamin midgame time:", self.schedule[0]
         return result
 
-    def __search(self, node, depth, alpha, beta, player):
-        alpha_orig = alpha  # Save the original value of Alpha
+    def __search(self, node, depth, alpha, beta, player, depth_counters=None):
+        if depth_counters is not None:
+            depth_counters[depth] += 1
 
-        try:
-            tt_entry = self._transposition_table[node]  # Looking entry in transposition table
-        except KeyError:
-            tt_entry = None
-
-        if tt_entry is not None and tt_entry[0] >= depth:
-            if tt_entry[1] is 0:    # Flag is EXTRACT
-                return tt_entry[2], tt_entry[3]
-            elif tt_entry[1] is 1:  # Flag is LOWER BOUND
-                alpha = max(alpha, tt_entry[2])
-            elif tt_entry[1] is 2:  # Flag is UPPER BOUND
-                beta = min(beta, tt_entry[2])
-
-        if alpha >= beta:
-            return tt_entry[2], tt_entry[3]
         if depth <= 0:
-            return player * self.get_heuristic_value(node), None
+            if self._is_endgame is True:
+                result = node.get_score(player) - node.get_score(-player)
+            else:
+                result = self.get_heuristic_value(node)
+            return player * result, None
 
         valid_moves = node.get_all_valid_moves(player)
         if len(valid_moves) is 0:
             enemy_valid_moves = node.get_all_valid_moves(-player)
             if len(enemy_valid_moves) is 0:
-                return player * self.get_heuristic_value(node), None
+                if self._is_endgame is True:
+                    result = node.get_score(player) - node.get_score(-player)
+                else:
+                    result = self.get_heuristic_value(node)
+                return player * result, None
             else:
-                result = self.__search(node, depth, -beta, -alpha, -player)
+                result = self.__search(node, depth, -beta, -alpha, -player, depth_counters)
                 return -result[0], result[1]
 
         best_value, best_move = -maxint, None
         for mov, new_node in valid_moves.iteritems():
-            result = self.__search(new_node, depth - 1, -beta, -alpha, -player)
+            result = self.__search(new_node, depth - 1, -beta, -alpha, -player, depth_counters)
             value = -result[0]  # Value of this node
             if value > best_value:
                 best_value, best_move = value, mov
@@ -244,17 +241,97 @@ class NegamaxWithDeepeningSearcher(AbstractSearcher):
             if alpha >= beta:
                 break
 
-        if best_value <= alpha_orig:    # Set Flag is UPPER BOUND
-            flag = 2
-        elif best_value >= alpha:       # Set Flag is LOWER Bound
-            flag = 1
-        else:                           # Set Flag is EXTRACT
-            flag = 0
-
-        # Insert entry (including depth, flag, value and move) to transposition table
-        self._transposition_table[node] = (depth, flag, best_value, best_move)
-
         return best_value, best_move
+
+    def get_new_depth_counters(self, depth):
+        depth_counters = [0] * (depth + 1)
+        depth_counters[depth] = 1
+        return depth_counters
+
+    def get_average_branching_factors(self, previous_depth_counters):
+        depth_counters_len = len(previous_depth_counters)
+        player_branching_factor = 0
+        player_levels = 0
+        opponent_branching_factor = 0
+        opponent_levels = 0
+        for x in xrange(0, depth_counters_len, 2):
+            try:
+                player_branching_factor += previous_depth_counters[x] / float(previous_depth_counters[x + 1])
+                player_levels += 1
+            except:
+                pass
+        for x in xrange(1, depth_counters_len, 2):
+            try:
+                opponent_branching_factor += previous_depth_counters[x] / float(previous_depth_counters[x + 1])
+                opponent_levels += 1
+            except:
+                pass
+        if player_levels > 0:
+            player_branching_factor /= player_levels
+        if opponent_levels > 0:
+            opponent_branching_factor /= opponent_levels
+        return player_branching_factor, opponent_branching_factor
+
+    def get_max_suggested_depth(self, previous_depth_counters, previous_search_time, search_time_limit):
+        total_nodes = sum(previous_depth_counters)
+        if total_nodes <= 0:
+            return 6
+        time_per_node = abs(float(previous_search_time) / total_nodes)
+        branching_factors = self.get_average_branching_factors(previous_depth_counters)
+        suggested_depth = -1
+        expected_time = 0
+        turn = 0
+        current_level_node_count = 1
+        for x in xrange(61):
+            expected_time += current_level_node_count * time_per_node
+            current_level_node_count *= branching_factors[turn]
+            if expected_time > search_time_limit:
+                suggested_depth -= 1
+                break
+            else:
+                suggested_depth += 1
+                turn = 0 if turn else 1
+        return max(suggested_depth, 0)
+
+    # How deep should we search to maximize the remaining time?
+    def get_suggested_depth(self, mid_game_time_left, game_time_left, end_game_num_empties, min_search_depth, node, player, previous_search_time=None, previous_depth_counters=None):
+        num_empties_left = 64 - node.get_score(player) - node.get_score(-player)
+
+        if num_empties_left > end_game_num_empties:  # Still midgame
+
+            if previous_depth_counters == None or previous_depth_counters == None:  # not first search
+                test_search_depth = 8
+                previous_depth_counters = self.get_new_depth_counters(test_search_depth)
+                time_start = clock()
+                # Just do a shallow search...
+                self.__search(node, test_search_depth, -maxint, maxint, player, previous_depth_counters)
+                previous_search_time = clock() - time_start
+                mid_game_time_left -= previous_search_time
+
+            num_mid_game_empties_left = num_empties_left - end_game_num_empties
+            self_empties_lLeft = num_mid_game_empties_left / 2
+
+            if num_mid_game_empties_left & 1:  # if odd number of empties left in midgame
+                self_empties_lLeft += 1
+
+            time_for_search = mid_game_time_left / float(self_empties_lLeft)  # Divide evenly...
+            return max(min_search_depth,
+                       self.get_max_suggested_depth(previous_depth_counters, previous_search_time, time_for_search))
+        else:
+            if num_empties_left <= 14:
+                return num_empties_left
+            else:
+                if previous_depth_counters != None and previous_depth_counters != None:
+                    # Check if capable of searching to endgame...
+                    time_for_search = game_time_left * 0.7  # Assume that end game takes 70% of remaining time
+                    max_suggested_depth = self.get_max_suggested_depth(previous_depth_counters, previous_search_time, time_for_search)
+                    if max_suggested_depth >= end_game_num_empties:
+                        return num_empties_left
+                    else:  # Do a pre-end game search
+                        return max(min_search_depth,
+                                   self.get_max_suggested_depth(previous_depth_counters, previous_search_time, time_for_search * 0.7))
+                else:  # We were already confident to proceed with endgame
+                    return num_empties_left
 
 class AlphaBetaWidthIterativeDeepening(AbstractSearcher):
     def search(self, node, depth, player):
