@@ -143,18 +143,37 @@ class heuristicB():
         return 0
 
     def get_point_of_a_chessman(self,node,i, j, player):
-        point = 0
+        point1 = 0
+        point2 = 0
+        __a = 0
+        __b = 0
         # Check PLAYER_1's chessman
         # Check 8 path - left - right - bottom - top and 4 diagonals
-        point += self.get_checking_path_value(node, i, j - 1, i, 0, True, player)
-        point += self.get_checking_path_value(node, i, j + 1, i, 7, True, player)
-        point += self.get_checking_path_value(node, i - 1, j, 0, j, True, player)
-        point += self.get_checking_path_value(node, i + 1, j, 7, j, True, player)
-        point += self.get_checking_path_value(node, i - 1, j - 1, 0, 0, False, player)
-        point += self.get_checking_path_value(node, i - 1, j + 1, 0, 7, False, player)
-        point += self.get_checking_path_value(node, i + 1, j + 1, 7, 7, False, player)
-        point += self.get_checking_path_value(node, i + 1, j - 1, 7, 0, False, player)
-        return point
+        __a, __b = self.get_checking_path_value(node, i, j - 1, i, 0, True, player)
+        point1 += __a
+        point2 += __b
+        __a, __b = self.get_checking_path_value(node, i, j + 1, i, 7, True, player)
+        point1 += __a
+        point2 += __b
+        __a, __b = self.get_checking_path_value(node, i - 1, j, 0, j, True, player)
+        point1 += __a
+        point2 += __b
+        __a, __b = self.get_checking_path_value(node, i + 1, j, 7, j, True, player)
+        point1 += __a
+        point2 += __b
+        __a, __b = self.get_checking_path_value(node, i - 1, j - 1, 0, 0, False, player)
+        point1 += __a
+        point2 += __b
+        __a, __b = self.get_checking_path_value(node, i - 1, j + 1, 0, 7, False, player)
+        point1 += __a
+        point2 += __b
+        __a, __b = self.get_checking_path_value(node, i + 1, j + 1, 7, 7, False, player)
+        point1 += __a
+        point2 += __b
+        __a, __b = self.get_checking_path_value(node, i + 1, j - 1, 7, 0, False, player)
+        point1 += __a
+        point2 += __b
+        return point1, point2
 
     def get_number_of_safe_man(self, node, player):
         """
@@ -345,7 +364,7 @@ class heuristicB():
                     #get value of strength
                     point1_1, point1_2 = self.get_point_of_a_chessman(node, i,j, player)
                     point1 = 0
-                    if (reached < 20):
+                    if reached < 20:
                         point1 = point1_1
                     else:
                         point1 = point1_2
