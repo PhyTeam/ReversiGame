@@ -6,10 +6,14 @@ from time import clock
 class AbstractSearcher:
     """ Lop truu tuong cu cac lop tim kiem"""
     _heuristic = None
+    _len_moves = 0
 
     def __init__(self, heuristic):
         """Initialize seacher"""
         self._heuristic = heuristic
+
+    def set_len_move(self, _len):
+        self._len_moves = _len
 
     def set_heuristic(self, h):
         self._heuristic = h
@@ -222,7 +226,6 @@ class NegamaxWithDeepeningSearcher(AbstractSearcher):
             return player * self.get_heuristic_value(node), None
 
         valid_moves = node.get_all_valid_moves(player)
-
         if len(valid_moves) is 0:
             enemy_valid_moves = node.get_all_valid_moves(-player)
             if len(enemy_valid_moves) is 0:

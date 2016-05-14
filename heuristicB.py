@@ -5,14 +5,14 @@ class heuristicB():
     __chess_table = 0
     __sum_point = 0
     point_board = [
-        [24, 0, 8, 8, 8, 8, 0, 24],
-        [0, 0, 4, 4, 4, 4, 0, 0],
-        [8, 4, 4, 2, 2, 4, 4, 8],
-        [8, 4, 2, 2, 2, 2, 4, 8],
-        [8, 4, 2, 2, 2, 2, 4, 8],
-        [8, 4, 4, 2, 2, 4, 4, 8],
-        [0, 0, 4, 4, 4, 4, 0, 0],
-        [24, 0, 8, 8, 8, 8, 0, 24]
+        [24, -16, 8, 8, 8, 8, -16, 24],
+        [-16, -16, 4, 4, 4, 4, -16, -16],
+        [8, 4, 4, 8, 8, 4, 4, 8],
+        [8, 4, 8, 8, 8, 8, 4, 8],
+        [8, 4, 2, 8, 8, 8, 4, 8],
+        [8, 4, 4, 8, 8, 4, 4, 8],
+        [-16, -16, 4, 4, 4, 4, -16, -16],
+        [24, -16, 8, 8, 8, 8, -16, 24]
     ]
 
     def __init__(self, node):
@@ -21,7 +21,8 @@ class heuristicB():
     def get_checking_path_value(self, node, start_x, start_y, end_x, end_y, roc, player):
         flag = True
         beside = True
-        point = 1;
+        point = 0;
+        point_v2 = 0
         if start_x < 0 or start_x >= 8 or start_y < 0 or start_y >= 8:
             return 0
         if roc:
@@ -30,6 +31,8 @@ class heuristicB():
                 if end_y == 0:
                     while True:
                         if node.get_at(start_x,j) == 0:
+                            end_x = start_x
+                            end_y = j
                             break
                         if j - 1 < 0 or node.get_at(start_x,j) == player:
                             flag = False
@@ -40,6 +43,8 @@ class heuristicB():
                 elif end_y == 7:
                     while True:
                         if node.get_at(start_x,j) == 0:
+                            end_x = start_x
+                            end_y = j
                             break
                         if j + 1 >= 8 or node.get_at(start_x,j) == player:
                             flag = False
@@ -52,6 +57,8 @@ class heuristicB():
                 if end_x == 0:
                     while True:
                         if node.get_at(i,start_y) == 0:
+                            end_x = i
+                            end_y = start_y
                             break
                         if i - 1 < 0 or node.get_at(i,start_y) == player:
                             flag = False
@@ -62,6 +69,8 @@ class heuristicB():
                 elif end_x == 7:
                     while True:
                         if node.get_at(i,start_y) == 0:
+                            end_x = i
+                            end_y = start_y
                             break
                         if i + 1 >= 8 or node.get_at(i,start_y) == player:
                             flag = False
@@ -91,6 +100,8 @@ class heuristicB():
 
             while True:
                 if node.get_at(i,j) == 0:
+                    end_x = i
+                    end_y = j
                     break
                 if (i - 1 < 0 or i + 1 >= 8) or (j - 1 < 0 or j + 1 >= 8) or node.get_at(i,j) == player:
                     flag = False
@@ -101,9 +112,9 @@ class heuristicB():
                 beside = False
 
         if flag == True and beside == False:
-            return point
+            return self.point_board[end_x][end_y], point
         else:
-            return 0
+            return 0,0
 
     def if_path_belong_to_player(self, node, player, path_id, curr_player):
         """
@@ -123,9 +134,13 @@ class heuristicB():
 
         return 1
 
-    def update_point_board(self):
+    def update_point_board(self, node, player):
         #return sum value of squares that has no
-        return 0;
+        for i in xrange(8):
+            for j in xrange(8):
+                if node.get_at(i,j) == player:
+                    self.point_board[7-i][7-j] = 0
+        return 0
 
     def get_point_of_a_chessman(self,node,i, j, player):
         point = 0
@@ -315,20 +330,25 @@ class heuristicB():
     def __is_Safe(self, node, i , j):
         return False
 
-    def get_value_of_men(self, node, player):
+    def get_value_of_men(self, node, player, reached):
         """Evaluate value of a chessman based on number of opponent's chessman around him [0-8]"""
 
         point_sum1 = 0
         point_sum2 = 0
         point_sum3 = 0
-
+        #self.update_point_board(node, player)
         safe_man = self.get_number_of_safe_man(node, player)
 
         for i in xrange(8):
             for j in xrange(8):
                 if node.get_at(i,j) == player:
                     #get value of strength
-                    point1 = self.get_point_of_a_chessman(node, i,j, player)
+                    point1_1, point1_2 = self.get_point_of_a_chessman(node, i,j, player)
+                    point1 = 0
+                    if (reached < 20):
+                        point1 = point1_1
+                    else:
+                        point1 = point1_2
                     point3 = self.point_board[i][j]
                     #if i == 0 or j == 0 or i == 7 or j == 7:
                         #point3 = 8
